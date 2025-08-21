@@ -1,41 +1,38 @@
-import os
-import re
 from PIL import Image, ImageDraw, ImageFont
+import os
+import random
 
-# Utility: strip emojis if Pillow can't handle them
-def remove_emojis(text: str) -> str:
-    return re.sub(r'[^\x00-\x7F]+', '', text)
+def generate_pixel_art(text, output_path="output.png", pixel_size=10):
+    # Image size
+    width, height = 500, 500
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
 
-def generate_birthday_card(message: str, output_path: str = "birthday_card.png"):
-    """
-    Generates a simple birthday card with the given message.
-    """
+    # Load font
+    font = ImageFont.load_default()
 
-    # Ensure message is safe to render
-    safe_message = remove_emojis(message)
-
-    # Create a blank white image
-    img = Image.new("RGB", (800, 400), (255, 255, 255))
-    draw = ImageDraw.Draw(img)
-
-    # Load a font
-    try:
-        font = ImageFont.truetype("arial.ttf", 40)  # works locally if Arial exists
-    except:
-        font = ImageFont.load_default()  # fallback on Render
+    # Get text bounding box instead of textsize
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
 
     # Center text
-    text_width, text_height = draw.textsize(safe_message, font=font)
-    position = ((800 - text_width) // 2, (400 - text_height) // 2)
+    x = (width - text_width) // 2
+    y = (height - text_height) // 2
 
-    # Draw text in black
-    draw.text(position, safe_message, font=font, fill="black")
+    # Draw text
+    draw.text((x, y), text, fill="black", font=font)
 
-    # Save the image
-    img.save(output_path)
-    return output_path
+    # Pixelate
+    small = image.resize(
+        (width // pixel_size, height // pixel_size),
+        resample=Image.NEAREST
+    )
+    pixelated = small.resize(image.size, Image.NEAREST)
+
+    # Save
+    pixelated.save(output_path)
+    print(f"✅ Pixel art saved at {output_path}")
 
 if __name__ == "__main__":
-    # Example test run
-    card_path = generate_birthday_card("🎂 Happy Birthday Shifa! 🎉")
-    print(f"Generated card: {card_path}")
+    generate_pixel_art("Hello 🚀", "pixel_output.png", pixel_size=20)
