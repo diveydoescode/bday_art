@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from pixel_generator import PixelArtGenerator  # ✅ use the class, not missing function
+from pixel_generator import PixelArtGenerator  # ✅ FIXED: import class, not missing function
 
 app = Flask(__name__)
 app.secret_key = 'afshah_pixel_birthday_2024'
@@ -31,7 +31,7 @@ def upload_file():
     
     file = request.files['file']
     name = request.form.get('name', 'Afshah').strip()
-    pixel_size = int(request.form.get('pixel_size', 8))  # ✅ allow custom pixel size
+    pixel_size = int(request.form.get('pixel_size', 8))  # ✅ keep pixel size configurable
     
     if file.filename == '':
         flash('No file selected!')
@@ -49,12 +49,12 @@ def upload_file():
         file.save(input_path)
 
         try:
-            # ✅ Use the PixelArtGenerator class
+            # ✅ Use PixelArtGenerator class
             generator = PixelArtGenerator(pixel_size=pixel_size)
             success = generator.generate_pixel_art(input_path, output_path, pixel_size, name)
 
             if success:
-                os.remove(input_path)  # clean up original
+                os.remove(input_path)  # cleanup original
                 return render_template(
                     'result.html',
                     output_file=f"outputs/{unique_id}_birthday_card.png",
