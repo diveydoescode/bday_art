@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from pixel_generator import generate_birthday_card  # ✅ import new function
+from pixel_generator import PixelArtGenerator  # ✅ use the class, not missing function
 
 app = Flask(__name__)
 app.secret_key = 'afshah_pixel_birthday_2024'
@@ -31,6 +31,7 @@ def upload_file():
     
     file = request.files['file']
     name = request.form.get('name', 'Afshah').strip()
+    pixel_size = int(request.form.get('pixel_size', 8))  # ✅ allow custom pixel size
     
     if file.filename == '':
         flash('No file selected!')
@@ -44,19 +45,25 @@ def upload_file():
         input_path = os.path.join(UPLOAD_FOLDER, f"{unique_id}_input.{file_extension}")
         output_path = os.path.join(OUTPUT_FOLDER, f"{unique_id}_birthday_card.png")
         
-        # Save uploaded file (even though we don't really use it here)
+        # Save uploaded file
         file.save(input_path)
 
         try:
-            # ✅ Generate birthday card with message
-            generate_birthday_card(f"🎂 Happy Birthday {name}! 🎉", output_path)
+            # ✅ Use the PixelArtGenerator class
+            generator = PixelArtGenerator(pixel_size=pixel_size)
+            success = generator.generate_pixel_art(input_path, output_path, pixel_size, name)
 
-            # Clean up input file
-            os.remove(input_path)
+            if success:
+                os.remove(input_path)  # clean up original
+                return render_template(
+                    'result.html',
+                    output_file=f"outputs/{unique_id}_birthday_card.png",
+                    name=name
+                )
+            else:
+                flash("Image generation failed.")
+                return redirect(url_for('index'))
 
-            return render_template('result.html',
-                                   output_file=f"outputs/{unique_id}_birthday_card.png",
-                                   name=name)
         except Exception as e:
             flash(f"Error processing image: {e}")
             return redirect(url_for('index'))
