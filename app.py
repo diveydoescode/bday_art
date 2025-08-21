@@ -2,9 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from pixel_generator import PixelArtGenerator
-
-
+from pixel_generator import generate_birthday_card  # ✅ import new function
 
 app = Flask(__name__)
 app.secret_key = 'afshah_pixel_birthday_2024'
@@ -33,7 +31,6 @@ def upload_file():
     
     file = request.files['file']
     name = request.form.get('name', 'Afshah').strip()
-    pixel_size = int(request.form.get('pixel_size', 8))
     
     if file.filename == '':
         flash('No file selected!')
@@ -42,28 +39,26 @@ def upload_file():
     if file and allowed_file(file.filename):
         # Generate unique filename
         unique_id = str(uuid.uuid4())[:8]
-        filename = secure_filename(file.filename)
-        file_extension = filename.rsplit('.', 1)[1].lower()
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
         
         input_path = os.path.join(UPLOAD_FOLDER, f"{unique_id}_input.{file_extension}")
-        output_path = os.path.join(OUTPUT_FOLDER, f"{unique_id}_pixel_art.png")
+        output_path = os.path.join(OUTPUT_FOLDER, f"{unique_id}_birthday_card.png")
         
-        # Save uploaded file
+        # Save uploaded file (even though we don't really use it here)
         file.save(input_path)
-        
-        # Generate pixel art
-        generator = PixelArtGenerator()
-        success = generator.generate_pixel_art(input_path, output_path, pixel_size, name)
-        
-        if success:
+
+        try:
+            # ✅ Generate birthday card with message
+            generate_birthday_card(f"🎂 Happy Birthday {name}! 🎉", output_path)
+
             # Clean up input file
             os.remove(input_path)
-            
-            return render_template('result.html', 
-                                 output_file=f"outputs/{unique_id}_pixel_art.png",
-                                 name=name)
-        else:
-            flash('Error processing image. Please try again.')
+
+            return render_template('result.html',
+                                   output_file=f"outputs/{unique_id}_birthday_card.png",
+                                   name=name)
+        except Exception as e:
+            flash(f"Error processing image: {e}")
             return redirect(url_for('index'))
     
     flash('Invalid file type. Please upload an image file.')
